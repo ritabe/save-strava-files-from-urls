@@ -13,7 +13,7 @@ const App: React.FC = () => {
     setTxtFile(e.target.files?.[0] || null);
   };
 
-  const handleUpload = (e: Event) => {
+  const handleUpload = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (txtFile) {

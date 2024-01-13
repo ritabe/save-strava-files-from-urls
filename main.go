@@ -1,8 +1,10 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"log/slog"
 	"mime/multipart"
@@ -13,13 +15,19 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-type hasName interface {
-	Name() string
-}
+const webAppDir = "webapp/dist"
+
+//go:embed webapp/dist
+var webappEmbedFs embed.FS
 
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:       "/",
+		HTML5:      true,
+		Filesystem: getFileSystem(webAppDir, webappEmbedFs),
+	}))
 
 	e.GET("/hello", handleHello)
 	e.POST("/upload_txt", handleUploadTxt)
@@ -146,3 +154,12 @@ func getURLsFromTxt(file *multipart.FileHeader) ([]string, error) {
 // 	fileType := http.DetectContentType(buffer)
 // 	return fileType, nil
 // }
+
+func getFileSystem(path string, embededFiles embed.FS) http.FileSystem {
+	fsys, err := fs.Sub(embededFiles, path)
+	if err != nil {
+		panic(err)
+	}
+
+	return http.FS(fsys)
+}
